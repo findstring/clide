@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clide-editor"
+version = "0.1.0"
+description = "A tiny, no-frills C code editor built with Python + tkinter"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [
+    { name = "Moinak Debnath" }
+]
+keywords = ["editor", "c", "ide", "tkinter", "syntax-highlighting"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: C",
+    "Topic :: Software Development",
+    "Topic :: Text Editors",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/findstring/clide"
+Repository = "https://github.com/findstring/clide"
+Issues = "https://github.com/findstring/clide/issues"
+
+[project.scripts]
+clide = "clide:main"
+
+[tool.setuptools.package-data]
+clide = ["icons/*.ico"]

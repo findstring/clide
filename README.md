@@ -1,20 +1,10 @@
-<h1 align="center">CLIDE</h1>
-<p align="center"><b>C L</b>anguage <b>I</b>ntegrated <b>D</b>evelopment <b>E</b>nvironment</p>
-<p align="center">A tiny, no-frills C code editor built with Python + tkinter.</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/version-v0.0.1-orange">
-  <img src="https://img.shields.io/badge/python-3.x-blue">
-  <img src="https://img.shields.io/badge/platform-Windows-lightgrey">
-</p>
-
 > 🤖 **Note:** This README was written by Claude AI, because the dev (me) was too lazy to write one myself. The code, however, is 100% hand-written — except for the giant list of C keywords/types/functions used for syntax highlighting, which Claude also helped generate because who's memorizing `stdc_leading_zeros` for fun.
 
 ---
 
 ## What is this?
 
-CLIDE is a lightweight C editor with syntax highlighting, line numbers, auto-indent, and a one-key "compile and run" workflow using `gcc`. No bloat, no plugins, no 400 MB Electron shell — just a `tkinter` window that gets out of your way.
+CLIDE is a lightweight library based C editor with syntax highlighting, line numbers, auto-indent, and a one-key "compile and run" workflow using `gcc`. No bloat, no plugins, no 400 MB Electron shell — just a `tkinter` window that gets out of your way.
 
 Built mostly as a personal project / learning exercise, not (yet) a serious rival to VS Code.
 
@@ -27,6 +17,7 @@ Built mostly as a personal project / learning exercise, not (yet) a serious riva
 - ▶️ **Run with F5** — compiles your file with `gcc` and runs it in a new console window
 - 💾 **Open / Save / Save As** from the File menu or `Ctrl+O` / `Ctrl+S`
 - 📋 **Paste-aware highlighting** — pasted multi-line code gets highlighted properly, not just the current line
+- 🎨 **Style Configurator** — change background, foreground colour and also fonts
 - 🖱️ Undo/redo support (unlimited undo history)
 
 ## Requirements
@@ -38,16 +29,15 @@ Built mostly as a personal project / learning exercise, not (yet) a serious riva
 ## Getting Started
 
 ```bash
-git clone https://github.com/findstring/clide
-cd clide
-python clide.py
+pip install clide-editor
+python -m clide
 ```
 
 Open a `.c` file with `Ctrl+O`, write some code, hit `F5` to compile and run it.
 
 ## Version
 
-**v0.0.1** — early days. Things work, but expect rough edges.
+**v0.1.0** — early days. Things work, but expect rough edges.
 
 ## Limitations
 
@@ -57,7 +47,6 @@ Open a `.c` file with `Ctrl+O`, write some code, hit `F5` to compile and run it.
 - **No build configuration** — compilation is a hardcoded `gcc file.c -o file.exe`, no custom flags, no Makefile support.
 - **No autocomplete, linting, or error highlighting** — you find out about bugs when `gcc` yells at you.
 - **No find & replace** yet.
-- **Font dependency** — defaults to the `Iosevka` font; falls back to `Courier New` if it's not installed on your system.
 
 ## To Be Featured (Roadmap)
 
@@ -67,7 +56,6 @@ Open a `.c` file with `Ctrl+O`, write some code, hit `F5` to compile and run it.
 - [ ] Custom compiler flags / build settings
 - [ ] Bracket matching + auto-close brackets
 - [ ] Inline error markers from `gcc` output
-- [ ] Themes (because everyone deserves a light mode option, even if nobody will use it)
 - [ ] Proper packaging (so you don't need Python installed to run it)
 
 ## Contributing
