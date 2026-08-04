@@ -1,23 +1,15 @@
 import tkinter as tk
-from tkinter import messagebox
-from tkinter import filedialog
-from tkinter import simpledialog
+import os, sys, subprocess
 import tkinter.font as tkfont
-from tkinter import ttk
-from tkinter import colorchooser
-import sys
-import os
-import subprocess
+from tkinter import colorchooser, ttk, simpledialog, filedialog, messagebox
 
-CLIDE_VERSION = "v0.1.0"
+CLIDE_VERSION = "v0.1.1"
 SCRIPT_PATH = os.path.abspath(__file__)
 LOGO_ICO = os.path.join(os.path.dirname(SCRIPT_PATH), "icons", "logo.ico")
 COMMON_BG = "gray5"
 COMMON_FG = "gray70"
 COMMON_FONTSIZE = 16
-COMMON_FONT = "Iosevka" # You can change it to your desired font
-
-# This Section is fully done by CLAUDE as i dont know all the types 
+COMMON_FONT = "Iosevka"
 
 C_TYPES = {
     "void",
@@ -330,33 +322,73 @@ class WINDOW:
         self.editor.tag_configure("comment", foreground="grey")
         self.editor.tag_configure("type", foreground="green")
     
-    def about_info(self, event = None):
-        win = tk.Toplevel(self.window)
-        win.attributes("-topmost", True)
-        win.title("About and Info")
+    def run_file(self, event=None):
+        if not self.file:
+            messagebox.showerror("No File", "Currently No File is opened")
+            return
+        exe = os.path.splitext(self.file)[0] + ".exe"
+
+        subprocess.Popen(f'cmd /k gcc "{self.file}" -o "{exe}" && "{exe}" & pause & exit', creationflags=subprocess.CREATE_NEW_CONSOLE)
+    
+    def open_file(self, event=None):
+        filename = filedialog.askopenfilename(
+            filetypes=[
+                ("C Files", "*.c *.h")
+            ]
+        )
+        if not filename:
+            return
+        
+        size = os.path.getsize(filename)
+        size = size / 1024**2
+        if (size) > 1:
+            permission = messagebox.askyesno("Warning", f"Loading This File Could Take Time\n Size of the file is {size} mb\n Do you want to load it ?")
+            if not permission:
+                return
+        text = None
         try:
-            win.iconbitmap(LOGO_ICO)
-        except:
-            messagebox.showerror("Logo Error", f"Unable to find {LOGO_ICO}")
-        win.focus_force()
-        win.focus_set()
-        win.configure(bg=self.bgcolor)
-        tk.Label(win, text ="Software name    : CLIDE", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
-        tk.Label(win, text =f"Software version : {CLIDE_VERSION}", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
-        tk.Label(win, text ="Maintainer       : Moinak debnath", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
-        tk.Label(win, text ="Contributors     : Claude (AI assistance)", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
-        tk.Label(win, text ="Description      : A code editor for C", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
-        tk.Label(win, text ="License          : MIT", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
-                
-        win.update_idletasks()
+            with open(filename, "r", encoding="utf-8") as f:
+                text = f.read().expandtabs(4)
+        except Exception as e:
+            messagebox.showerror("Unable", f"Unable to Load File {e}")
+        
+        self.editor.delete("1.0", "end")
+        self.editor.insert("1.0", text)
+        self.multiline_comment = False
+        last_line = int(self.editor.index("end-1c").split(".")[0])
 
-        w = win.winfo_width()
-        h = win.winfo_height()
+        for line in range(1, last_line + 1):
+            self.syntax_highlight(f"{line}.0", f"{line}.end")
 
-        x = (win.winfo_screenwidth() - w) // 2
-        y = ((win.winfo_screenheight() - h) // 2) - 50 # to remove the taskbar and show the relative center
-
-        win.geometry(f"{w}x{h}+{x}+{y}")
+        self.file = filename
+        self.editor.edit_modified(False)
+        self.window.title(f"CLIDE - {self.file}")
+        self.update_clide()
+    
+    def save_file(self, event=None):
+        if not self.file:
+            return
+            
+        with open(self.file, "w", encoding="utf-8") as f:
+            f.write(self.editor.get("1.0", "end-1c"))
+        
+        self.update_clide()
+        self.editor.edit_modified(False)
+        self.window.title(f"CLIDE - {self.file}")
+    
+    def saveas_file(self, event=None):
+        path = filedialog.asksaveasfilename(
+            defaultextension=".c",
+            filetypes=[("C source", "*.c"), ("All Files", "*.*")]
+        )
+        if not path:
+            return
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(self.editor.get("1.0", "end-1c"))
+        self.file = path
+        self.editor.edit_modified(False)
+        self.window.title(f"CLIDE - {self.file}")
+        self.update_clide()
     
     def style_configurator(self, event = None):
         win = tk.Toplevel(self.window)
@@ -458,7 +490,7 @@ class WINDOW:
                 if self.fontsize >= 80:
                     return
                 self.fontsize += 1
-                self.editor.configure(font=(self.font, self.fontsize, "bold"))
+                self.editor.configure(font=(self.font, self.fontsize))
                 self.line_numbers_width += 1
                 self.line_numbers.configure(width = self.line_numbers_width)
                 self.update_clide()
@@ -467,7 +499,7 @@ class WINDOW:
                 if self.fontsize <= 10:
                     return
                 self.fontsize -= 1
-                self.editor.configure(font=(self.font, self.fontsize, "bold"))
+                self.editor.configure(font=(self.font, self.fontsize))
                 self.line_numbers_width -= 1
                 self.line_numbers.configure(width = self.line_numbers_width)
                 self.update_clide()
@@ -485,77 +517,145 @@ class WINDOW:
         return "break"
     
     def syntax_highlight(self, start, end):
-        if self.multiline_comment:
-            self.editor.tag_add( "comment", start, end)
+        self.editor.tag_remove("keyword", start, end)
+        self.editor.tag_remove("type", start, end)
+        self.editor.tag_remove("functions", start, end)
+        self.editor.tag_remove("string", start, end)
+        self.editor.tag_remove("comment", start, "end")
+        self.editor.tag_remove("preprocessor", start, end)
+        self.editor.tag_remove("brackets", start, end)
+
         words = self.editor.get(start, end)
         lc = len(words)
+        
+        if self.multiline_comment and words.find("*/") == -1 and words.find("/*") == -1:
+            self.editor.tag_add("comment", start, end)
+            return
+
         word = ""
+        word_start = 0
+
         in_string = False
         in_char = False
         in_preprocessor = False
+
         string_start = 0
         char_start = 0
-        for i in range(0, lc, 1):
-            if words[i] in (" ", "\t"):
-                continue
-            word += words[i]
-            if words[i:i+2] == "//" and not in_string and not in_preprocessor:
-                self.editor.tag_add( "comment", f"{start}+{i-1}c", end)
+
+        IDENT = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+        i = 0
+        while i < lc:
+
+            ch = words[i]
+
+            if not in_string and not in_char and words[i:i+2] == "//":
+                self.editor.tag_add("comment", f"{start}+{i}c", end)
                 break
-                
-            elif words[i:i+2] == "/*" and not in_string and not in_preprocessor:
-                self.multiline_comment = True
-                self.editor.tag_add( "comment", f"{start}+{i-1}c", end)
-                continue
-            
-            elif words[i:i+2] == "*/" and not in_string and not in_preprocessor:
+
+            elif not in_string and not in_char and words[i:i+2] == "/*":
+                close = words.find("*/", i + 2)
+                if close == -1:
+                    self.multiline_comment = True
+                    self.editor.tag_add("comment", f"{start}+{i}c", end)
+                    break
+                else:
+                    self.editor.tag_add("comment", f"{start}+{i}c", f"{start}+{close+2}c")
+                    i = close + 2
+                    word = ""
+                    continue
+
+            elif self.multiline_comment and words[i:i+2] == "*/":
                 self.multiline_comment = False
+                self.editor.tag_add("comment", start, f"{start}+{i+2}c")
+                i += 2
                 continue
-                
-            elif word in C_TYPES:
-                self.editor.tag_add( "type", f"{start}+{i-len(word)+1}c", f"{start}+{i+1}c")
-                word = ""
-            
-            elif word in C_KEYWORDS:
-                self.editor.tag_add( "keyword", f"{start}+{i-len(word)+1}c", f"{start}+{i+1}c")
-                word = ""
-                
-            elif word in C_FUNCTIONS:
-                self.editor.tag_add( "functions", f"{start}+{i-len(word)+1}c", f"{start}+{i+1}c")
-                word = ""
-                
-            elif words[i] == '"':
+
+            if ch == '"':
+
                 if not in_string:
                     in_string = True
                     string_start = i
                 else:
                     in_string = False
-                    self.editor.tag_add( "string", f"{start}+{string_start}c", f"{start}+{i+1}c")
-                word = ""
-            
-            elif words[i] == "'":
+                    self.editor.tag_add(
+                        "string",
+                        f"{start}+{string_start}c",
+                        f"{start}+{i+1}c"
+                    )
+
+                i += 1
+                continue
+
+            if ch == "'":
+
                 if not in_char:
                     in_char = True
                     char_start = i
                 else:
                     in_char = False
-                    self.editor.tag_add( "string", f"{start}+{char_start}c", f"{start}+{i+1}c")
-                word = ""
-                
-            elif words[i] in "{}()[];,+-*=<>":
-                self.editor.tag_add( "brackets", f"{start}+{i}c", f"{start}+{i+1}c")
+                    self.editor.tag_add(
+                        "string",
+                        f"{start}+{char_start}c",
+                        f"{start}+{i+1}c"
+                    )
+
+                i += 1
+                continue
+
+            if in_string or in_char:
+                i += 1
+                continue
+
+            if ch == "#":
+                self.editor.tag_add("preprocessor", f"{start}+{i}c", end)
+                break
+
+            if ch.isalnum() or ch == "_":
+
+                if not word:
+                    word_start = i
+
+                word += ch
+
+                next_char = words[i + 1] if i + 1 < lc else " "
+
+                if next_char not in IDENT:
+
+                    if word in C_TYPES:
+                        self.editor.tag_add(
+                            "type",
+                            f"{start}+{word_start}c",
+                            f"{start}+{i+1}c"
+                        )
+
+                    elif word in C_KEYWORDS:
+                        self.editor.tag_add(
+                            "keyword",
+                            f"{start}+{word_start}c",
+                            f"{start}+{i+1}c"
+                        )
+
+                    elif word in C_FUNCTIONS:
+                        self.editor.tag_add(
+                            "functions",
+                            f"{start}+{word_start}c",
+                            f"{start}+{i+1}c"
+                        )
+
+                    word = ""
+
+            else:
                 word = ""
 
-            elif words[i] in ".!%&|^~?:/":
-                # operators/punctuation not covered above (ternary, logical,
-                # bitwise, modulo, division, member access, etc.) aren't
-                # highlighted, but must still break the token so it doesn't
-                # glue onto the next identifier
-                word = ""
-            
-            elif words[i:i+1] == "#":
-                self.editor.tag_add( "preprocessor", f"{start}+{i}c", end)
-                break
+                if ch in "{}()[]":
+                    self.editor.tag_add(
+                        "brackets",
+                        f"{start}+{i}c",
+                        f"{start}+{i+1}c"
+                    )
+
+            i += 1
             
     def update_clide(self, event=None):
         start = self.editor.index("insert linestart")
@@ -580,75 +680,35 @@ class WINDOW:
 
             self.line_numbers.create_text(5, y, font = (self.font, self.fontsize), fill=self.fgcolor, text=line, anchor="nw")
             index = self.editor.index(f"{index}+1line")
-    
-    def run_file(self, event=None):
-        if not self.file:
-            messagebox.showerror("No File", "Currently No File is opened")
-            return
-        exe = os.path.splitext(self.file)[0] + ".exe"
-
-        subprocess.Popen(f'cmd /k gcc "{self.file}" -o "{exe}" && "{exe}" & pause & exit', creationflags=subprocess.CREATE_NEW_CONSOLE)
-    
-    def open_file(self, event=None):
-        filename = filedialog.askopenfilename(
-            filetypes=[
-                ("All Files", "*.*")
-            ]
-        )
-        if not filename:
-            return
-        
-        size = os.path.getsize(filename)
-        size = size / 1024**2
-        if (size) > 1:
-            permission = messagebox.askyesno("Warning", f"Loading This File Could Take Time\n Size of the file is {size} mb\n Do you want to load it ?")
-            if not permission:
-                return
-        text = None
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                text = f.read().expandtabs(4)
-        except Exception as e:
-            messagebox.showerror("Unable", f"Unable to Load File {e}")
-        
-        self.editor.delete("1.0", "end")
-        self.editor.insert("1.0", text)
-        self.multiline_comment = False
-        last_line = int(self.editor.index("end-1c").split(".")[0])
-
-        for line in range(1, last_line + 1):
-            self.syntax_highlight(f"{line}.0", f"{line}.end")
-
-        self.file = filename
-        self.editor.edit_modified(False)
-        self.window.title(f"CLIDE - {self.file}")
-        self.update_clide()
-    
-    def save_file(self, event=None):
-        if not self.file:
-            return
             
-        with open(self.file, "w", encoding="utf-8") as f:
-            f.write(self.editor.get("1.0", "end-1c"))
-        
-        self.update_clide()
-        self.editor.edit_modified(False)
-        self.window.title(f"CLIDE - {self.file}")
-    
-    def saveas_file(self, event=None):
-        path = filedialog.asksaveasfilename(
-            defaultextension=".c",
-            filetypes=[("C source", "*.c"), ("All Files", "*.*")]
-        )
-        if not path:
-            return
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(self.editor.get("1.0", "end-1c"))
-        self.file = path
-        self.editor.edit_modified(False)
-        self.window.title(f"CLIDE - {self.file}")
-        self.update_clide()
+    def about_info(self, event = None):
+        win = tk.Toplevel(self.window)
+        win.attributes("-topmost", True)
+        win.title("About and Info")
+        try:
+            win.iconbitmap(LOGO_ICO)
+        except:
+            messagebox.showerror("Logo Error", f"Unable to find {LOGO_ICO}")
+        win.focus_force()
+        win.focus_set()
+        win.configure(bg=self.bgcolor)
+        tk.Label(win, text ="Software name    : CLIDE", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
+        tk.Label(win, text =f"Software version : {CLIDE_VERSION}", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
+        tk.Label(win, text ="Maintainer       : Moinak debnath", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
+        tk.Label(win, text ="Contributors     : Claude (AI assistance)", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
+        tk.Label(win, text ="Description      : A code editor for C", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
+        tk.Label(win, text ="License          : MIT", font = (self.font, 16), fg = self.fgcolor, bg = self.bgcolor).pack(pady=10, anchor = "nw")
+                
+        win.update_idletasks()
 
+        w = win.winfo_width()
+        h = win.winfo_height()
+
+        x = (win.winfo_screenwidth() - w) // 2
+        y = ((win.winfo_screenheight() - h) // 2) - 50
+
+        win.geometry(f"{w}x{h}+{x}+{y}")
+    
 def main():
     window = WINDOW()
     window.window.mainloop()

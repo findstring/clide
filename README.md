@@ -8,6 +8,11 @@ CLIDE is a lightweight library based C editor with syntax highlighting, line num
 
 Built mostly as a personal project / learning exercise, not (yet) a serious rival to VS Code.
 
+## Changelog
+
+- Proper syntax highlighting.
+- Now only C files are allowed to be edited
+
 ## Features
 
 - 🎨 **Syntax highlighting** for C — keywords, types, functions, strings, char literals, comments (single-line and block), numbers, and preprocessor directives
@@ -28,8 +33,21 @@ Built mostly as a personal project / learning exercise, not (yet) a serious riva
 
 ## Getting Started
 
+Install the latest version:
+
 ```bash
 pip install clide-editor
+```
+
+Or install this specific version:
+
+```bash
+pip install clide-editor==0.1.1
+```
+
+Run CLIDE:
+
+```bash
 python -m clide
 ```
 
@@ -37,7 +55,7 @@ Open a `.c` file with `Ctrl+O`, write some code, hit `F5` to compile and run it.
 
 ## Version
 
-**v0.1.0** — early days. Things work, but expect rough edges.
+**v0.1.1** — early days, starting to get on the track. Things work, but expect rough edges.
 
 ## Limitations
 
