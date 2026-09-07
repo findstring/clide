@@ -3,9 +3,10 @@ import os, sys, subprocess
 import tkinter.font as tkfont
 from tkinter import colorchooser, ttk, simpledialog, filedialog, messagebox
 
-CLIDE_VERSION = "v0.1.1"
+CLIDE_VERSION = "v0.2.0"
 SCRIPT_PATH = os.path.abspath(__file__)
 LOGO_ICO = os.path.join(os.path.dirname(SCRIPT_PATH), "icons", "logo.ico")
+LOGO_PNG = os.path.join(os.path.dirname(SCRIPT_PATH), "icons", "logo.png")
 COMMON_BG = "gray5"
 COMMON_FG = "gray70"
 COMMON_FONTSIZE = 16
@@ -232,7 +233,11 @@ C_KEYWORDS = {
 
 class WINDOW:
     def __init__(self):
-        self.file = ""
+        self.button_frame_list = []
+        self.is_saved = False
+        self.upper_frame = None
+        self.files_opened = {}
+        self.file = None
         self.multiline_comment = False
         self.fontsize = COMMON_FONTSIZE
         self.bgcolor = COMMON_BG
@@ -240,6 +245,13 @@ class WINDOW:
         self.indent_size = 4
         self.indented_count = 0
         self.window = tk.Tk()
+        self.window.configure(bg = "#202136")
+        self.main_frame = None
+        self.editor = None
+        self.line_numbers = None
+        self.main_scrollbar_x = None
+        self.main_scrollbar_y = None
+        self.line_numbers_width = 20
         self.font = COMMON_FONT
         if self.font not in tkfont.families():
             self.font = "Courier New"
@@ -248,11 +260,9 @@ class WINDOW:
         self.window.geometry(f"{int(self.window.winfo_screenwidth() / 1.4)}x{int(self.window.winfo_screenheight() / 1.2)}+{x}+{y}")
         self.window.state("zoomed")
         self.window.title("CLIDE")
-        self.window.grid_rowconfigure(0, weight = 1)
-        self.window.grid_rowconfigure(1, weight = 0)
-        self.window.grid_columnconfigure(0, weight = 0)
-        self.window.grid_columnconfigure(1, weight = 1)
-        self.window.grid_columnconfigure(2, weight = 0)
+        self.window.grid_rowconfigure(0, weight = 0)
+        self.window.grid_rowconfigure(1, weight = 1)
+        self.window.grid_columnconfigure(0, weight = 1)
         try:
             self.window.iconbitmap(LOGO_ICO)
         except:
@@ -264,7 +274,7 @@ class WINDOW:
         self.main_menubar_file_menu.add_command(label="Save", command = self.save_file)
         self.main_menubar_file_menu.add_command(label="Save as", command = self.saveas_file)
         self.main_menubar_file_menu.add_separator()
-        self.main_menubar_file_menu.add_command(label="Exit", command=self.window.quit)
+        self.main_menubar_file_menu.add_command(label="Exit", command=self.exit_app)
         self.main_menubar.add_cascade(label="File", menu=self.main_menubar_file_menu)
         
         self.main_menubar_run_menu = tk.Menu(self.main_menubar, tearoff=0)
@@ -276,23 +286,91 @@ class WINDOW:
         self.main_menubar_settings_menu.add_command(label="About and Info...", command = self.about_info)
         self.main_menubar.add_cascade(label="Settings", menu=self.main_menubar_settings_menu)
         self.window.config(menu=self.main_menubar)
+        self.window.protocol("WM_DELETE_WINDOW", self.exit_app)
         
-        self.main_scrollbar_x = tk.Scrollbar(self.window, orient="horizontal")
-        self.main_scrollbar_x.grid(row = 1, column = 0, columnspan = 2, sticky = "ew")
+        self.logo_png = tk.PhotoImage(file=LOGO_PNG)
+        self.logo_label = tk.Label(self.window, image=self.logo_png)
+        self.logo_label.grid(row = 0, column = 0, sticky = "w", pady = (30,0), padx = 30)
+        self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#202136", relief = "flat", font = ("Consolas", 60), fg = "white")
+        self.open_file_button.grid(row = 0, column = 1, pady = (0, 350), padx =(0, 100))
+        self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#202136", command = self.exit_app, relief = "flat", font = ("Consolas", 60), fg = "white")
+        self.exit_file_button.grid(row = 0, column = 1, pady = (350, 0), padx =(0, 100))
+    
+    def exit_app(self):
+        if self.is_saved == False:
+            saved = messagebox.askyesno("Save before exit", "Do you want to save the current file before exit ?")
+            if not saved:
+                self.window.destroy()
+                return
         
-        self.main_scrollbar_y = tk.Scrollbar(self.window, orient="vertical")
-        self.main_scrollbar_y.grid(row = 0, column = 2, sticky = "ns")
+        self.save_file()
+        self.window.destroy()
+            
+    def create_tab_area(self):
+        self.upper_frame = tk.Frame(self.window, bg = COMMON_BG, height = 25)
+        self.upper_frame.grid(row = 0, column = 0, columnspan = 3, sticky = "ew")
         
-        self.line_numbers_width = 20
+        self.upper_frame.grid_rowconfigure(0, weight = 1)
+        self.upper_frame.grid_rowconfigure(1, weight = 0)
         
-        self.line_numbers = tk.Canvas(self.window, highlightthickness=0, width = self.line_numbers_width, bg = self.bgcolor)
-        self.line_numbers.grid(row = 0, column = 0, sticky = "ns")
+        self.upper_frame.grid_columnconfigure(0, weight = 1)
+        
+        self.tab_scrollbar = tk.Scrollbar(self.upper_frame, orient = "horizontal")
+        self.tab_scrollbar.grid(row = 1, column = 0, sticky = "ew")
+        
+        self.tab_canvas = tk.Canvas(self.upper_frame, height = 25, xscrollcommand = self.tab_scrollbar.set, bg = COMMON_BG, relief = "sunken")
+        self.tab_canvas.grid(row = 0, column = 0, sticky = "ew")
+        
+        self.canvas_inside_frame = tk.Frame(self.tab_canvas)
+
+        self.tab_canvas.create_window(
+            (0, 0),
+            window=self.canvas_inside_frame,
+            anchor="nw"
+        )
+    
+    def hide_file(self, filename):
+        self.files_opened[filename][0].grid_remove()
+    
+    def add_file(self, filename):
+        if self.logo_label:
+            self.logo_label.destroy()
+            self.logo_label = None
+            
+        if self.open_file_button:
+            self.open_file_button.destroy()
+            self.open_file_button = None
+            
+        if self.exit_file_button:
+            self.exit_file_button.destroy()
+            self.exit_file_button = None
+            
+        if not self.upper_frame:
+            self.create_tab_area()
+        frame = tk.Frame(self.window, bg = COMMON_BG)
+        frame.grid(row = 1, column = 0, sticky = "nsew")
+        
+        frame.grid_rowconfigure(0, weight = 1)
+        frame.grid_rowconfigure(1, weight = 0)
+        
+        frame.grid_columnconfigure(0, weight = 0)
+        frame.grid_columnconfigure(1, weight = 1)
+        frame.grid_columnconfigure(2, weight = 0)
+        
+        main_scrollbar_x = tk.Scrollbar(frame, orient="horizontal")
+        main_scrollbar_x.grid(row = 1, column = 0, columnspan = 3, sticky = "ew")
+        
+        main_scrollbar_y = tk.Scrollbar(frame, orient="vertical")
+        main_scrollbar_y.grid(row = 0, column = 2, sticky = "ns")
+        
+        line_numbers = tk.Canvas(frame, highlightthickness=0, width = self.line_numbers_width, bg = self.bgcolor)
+        line_numbers.grid(row = 0, column = 0, sticky = "ns")
         
         def on_textscroll(first, last):
-            self.main_scrollbar_y.set(first, last)
+            main_scrollbar_y.set(first, last)
             self.update_clide()
             
-        self.editor = tk.Text(self.window ,
+        editor = tk.Text(frame ,
                               bg = self.bgcolor,
                               insertbackground="gray70",
                               fg = self.fgcolor ,
@@ -300,27 +378,99 @@ class WINDOW:
                               undo=True,
                               maxundo=-1,
                               font = (self.font, COMMON_FONTSIZE),
-                              xscrollcommand = self.main_scrollbar_x.set,
+                              xscrollcommand = main_scrollbar_x.set,
                               yscrollcommand=on_textscroll)
-        self.editor.grid(row = 0, column = 1, sticky = "nsew")
-        self.editor.edit_modified(False)
+        editor.grid(row = 0, column = 1, sticky = "nsew")
+        editor.edit_modified(False)
 
-        self.main_scrollbar_x.config(command = self.editor.xview)
-        self.main_scrollbar_y.config(command = self.editor.yview)
-        self.editor.bind("<KeyRelease>", self.update_clide)
-        self.editor.bind("<Control-o>", self.open_file)
-        self.editor.bind("<Control-s>", self.save_file)
-        self.editor.bind("<Return>", self.indent_line)
-        self.editor.bind("<F5>", self.run_file)
-        self.editor.bind("<Control-v>", self.paste_text)
-        self.editor.bind("<Control-MouseWheel>", self.zoom_text)
-        self.editor.tag_configure("keyword", foreground="yellow")
-        self.editor.tag_configure("string", foreground="#ff8080")
-        self.editor.tag_configure("preprocessor", foreground="orange")
-        self.editor.tag_configure("brackets", foreground="lightblue")
-        self.editor.tag_configure("functions", foreground="violet")
-        self.editor.tag_configure("comment", foreground="grey")
-        self.editor.tag_configure("type", foreground="green")
+        main_scrollbar_x.config(command = editor.xview)
+        main_scrollbar_y.config(command = editor.yview)
+        editor.bind("<KeyRelease>", self.update_clide)
+        editor.bind("<Control-o>", self.open_file)
+        editor.bind("<Control-s>", self.save_file)
+        editor.bind("<Return>", self.indent_line)
+        editor.bind("<F5>", self.run_file)
+        editor.bind("<Control-v>", self.paste_text)
+        editor.bind("<Control-MouseWheel>", self.zoom_text)
+        editor.tag_configure("keyword", foreground="yellow")
+        editor.tag_configure("string", foreground="#ff8080")
+        editor.tag_configure("preprocessor", foreground="orange")
+        editor.tag_configure("brackets", foreground="lightblue")
+        editor.tag_configure("functions", foreground="violet")
+        editor.tag_configure("comment", foreground="grey")
+        editor.tag_configure("type", foreground="green")
+        
+        self.files_opened[filename] = [frame, editor, line_numbers, main_scrollbar_x, main_scrollbar_y]
+        self.main_frame = frame
+        self.editor = editor
+        self.line_numbers = line_numbers
+        self.main_scrollbar_x = main_scrollbar_x
+        self.main_scrollbar_y = main_scrollbar_y
+        
+        def shorten(filename):
+            if len(filename) > 20:
+                name = filename[:20] + "..."
+                return name
+            else:
+                return filename
+        
+        button_frame = tk.Frame(
+            self.canvas_inside_frame,
+            width=80,
+            height=40,
+            relief="flat"
+        )
+
+        button_frame.pack(side="left", padx = 1)
+        button_frame.grid_columnconfigure(0, weight = 1)
+        button_frame.grid_columnconfigure(1, weight = 0)
+        
+        tk.Button(button_frame, bg = COMMON_BG, fg = COMMON_FG, text = shorten(filename.split("/")[-1]), command = lambda : self.select_file(filename)).grid(row = 0, column = 0, sticky = "nsew")
+        
+        def button_command(filename):
+            self.remove_file(filename)
+            button_frame.destroy()
+            
+        tk.Button(button_frame, bg = COMMON_BG, fg = COMMON_FG, text = "❌", relief = "flat", command = lambda : button_command(filename)).grid(row = 0, column = 1, sticky = "nsew")
+        self.button_frame_list.append(button_frame)
+    
+    def remove_file(self, filename):
+        if filename not in self.files_opened:
+            return
+        
+        if self.is_saved == False:
+            saved = messagebox.askyesno("Save before exit", "Do you want to save the current file before exit ?")
+            if not saved:
+                pass
+            else:
+                self.save_file()
+            
+        self.files_opened[filename][0].destroy()
+        self.main_frame = None
+        self.editor = None
+        self.line_numbers = None
+        self.main_scrollbar_x = None
+        self.main_scrollbar_y = None
+        del self.files_opened[filename]
+        if len(self.files_opened) > 0:
+            self.select_file(list(self.files_opened.keys())[0])
+            return
+        
+        elif len(self.files_opened) == 0:
+            self.upper_frame.destroy()
+            self.upper_frame = None
+            self.main_frame = None
+            self.editor = None
+            self.line_numbers = None
+            self.main_scrollbar_x = None
+            self.main_scrollbar_y = None
+            self.file = None
+            self.logo_label = tk.Label(self.window, image=self.logo_png)
+            self.logo_label.grid(row = 0, column = 0, sticky = "w", pady = (30,0), padx = 30)
+            self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#202136", relief = "flat", font = ("Consolas", 60), fg = "white")
+            self.open_file_button.grid(row = 0, column = 1, pady = (0, 350), padx =(0, 100))
+            self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#202136", command = self.window.quit, relief = "flat", font = ("Consolas", 60), fg = "white")
+            self.exit_file_button.grid(row = 0, column = 1, pady = (350, 0), padx =(0, 100))
     
     def run_file(self, event=None):
         if not self.file:
@@ -330,6 +480,16 @@ class WINDOW:
 
         subprocess.Popen(f'cmd /k gcc "{self.file}" -o "{exe}" && "{exe}" & pause & exit', creationflags=subprocess.CREATE_NEW_CONSOLE)
     
+    def select_file(self, filename):
+        if filename == None:
+            return
+            
+        if self.main_frame and self.main_frame.winfo_ismapped():
+            self.main_frame.grid_remove()
+        self.main_frame, self.editor, self.line_numbers, self.main_scrollbar_x, self.main_scrollbar_y = self.files_opened[filename]
+        self.main_frame.grid()
+        self.file = filename
+    
     def open_file(self, event=None):
         filename = filedialog.askopenfilename(
             filetypes=[
@@ -337,6 +497,10 @@ class WINDOW:
             ]
         )
         if not filename:
+            return
+        
+        if filename in self.files_opened and filename != self.file:
+            self.select_file(filename)
             return
         
         size = os.path.getsize(filename)
@@ -352,6 +516,9 @@ class WINDOW:
         except Exception as e:
             messagebox.showerror("Unable", f"Unable to Load File {e}")
         
+        if self.file:
+            self.hide_file(self.file)
+        self.add_file(filename)
         self.editor.delete("1.0", "end")
         self.editor.insert("1.0", text)
         self.multiline_comment = False
@@ -368,13 +535,14 @@ class WINDOW:
     def save_file(self, event=None):
         if not self.file:
             return
-            
+        
         with open(self.file, "w", encoding="utf-8") as f:
             f.write(self.editor.get("1.0", "end-1c"))
         
         self.update_clide()
         self.editor.edit_modified(False)
         self.window.title(f"CLIDE - {self.file}")
+        self.is_saved = True
     
     def saveas_file(self, event=None):
         path = filedialog.asksaveasfilename(
@@ -663,6 +831,7 @@ class WINDOW:
         self.syntax_highlight(start, end)
         if self.editor.edit_modified() and self.file:
             self.window.title(f"CLIDE - *{self.file}")
+            self.is_saved = False
             
         self.line_numbers.delete("all")
         line_count = int(self.editor.index("end-1c").split(".")[0])

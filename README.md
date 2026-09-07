@@ -10,8 +10,8 @@ Built mostly as a personal project / learning exercise, not (yet) a serious riva
 
 ## Changelog
 
-- Proper syntax highlighting.
-- Now only C files are allowed to be edited
+- Added Proper UI at the Start
+- Added Multi file management system
 
 ## Features
 
@@ -23,7 +23,8 @@ Built mostly as a personal project / learning exercise, not (yet) a serious riva
 - 💾 **Open / Save / Save As** from the File menu or `Ctrl+O` / `Ctrl+S`
 - 📋 **Paste-aware highlighting** — pasted multi-line code gets highlighted properly, not just the current line
 - 🎨 **Style Configurator** — change background, foreground colour and also fonts
-- 🖱️ Undo/redo support (unlimited undo history)
+- 🖱️ **Undo/redo support** (unlimited undo history)
+- 🗂️ **Multi file editor** -- Manage and code multiple files in on go.
 
 ## Requirements
 
@@ -42,7 +43,7 @@ pip install clide-editor
 Or install this specific version:
 
 ```bash
-pip install clide-editor==0.1.1
+pip install clide-editor==0.2.0
 ```
 
 Run CLIDE:
@@ -55,13 +56,12 @@ Open a `.c` file with `Ctrl+O`, write some code, hit `F5` to compile and run it.
 
 ## Version
 
-**v0.1.1** — early days, starting to get on the track. Things work, but expect rough edges.
+**v0.2.0** — Things work, but expect rough edges.
 
 ## Limitations
 
 - **Windows-only for now.** The maximized-window launch and the `F5` run command (`cmd /k gcc ...`) both assume Windows. Running this on Linux/macOS will likely misbehave or crash on the run step.
 - **Single-line-focused highlighting.** Typing re-highlights the line you're on; large structural edits elsewhere in the file (outside of paste) aren't automatically re-scanned.
-- **No project/workspace support** — it's a single-file editor, not a full IDE. No multi-file tabs yet.
 - **No build configuration** — compilation is a hardcoded `gcc file.c -o file.exe`, no custom flags, no Makefile support.
 - **No autocomplete, linting, or error highlighting** — you find out about bugs when `gcc` yells at you.
 - **No find & replace** yet.
@@ -70,7 +70,6 @@ Open a `.c` file with `Ctrl+O`, write some code, hit `F5` to compile and run it.
 
 - [ ] Cross-platform support (Linux/macOS build + run)
 - [ ] Find & Replace
-- [ ] Multiple tabs / multi-file projects
 - [ ] Custom compiler flags / build settings
 - [ ] Bracket matching + auto-close brackets
 - [ ] Inline error markers from `gcc` output
