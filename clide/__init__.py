@@ -1,4 +1,4 @@
-from .clide import main, CLIDE_VERSION
+from .clide import main, CLIDE_VERSION 
 
 __version__ = CLIDE_VERSION
 

@@ -3,7 +3,7 @@ import os, sys, subprocess
 import tkinter.font as tkfont
 from tkinter import colorchooser, ttk, simpledialog, filedialog, messagebox
 
-CLIDE_VERSION = "v0.2.0"
+CLIDE_VERSION = "v0.2.1"
 SCRIPT_PATH = os.path.abspath(__file__)
 LOGO_ICO = os.path.join(os.path.dirname(SCRIPT_PATH), "icons", "logo.ico")
 LOGO_PNG = os.path.join(os.path.dirname(SCRIPT_PATH), "icons", "logo.png")
@@ -234,7 +234,7 @@ C_KEYWORDS = {
 class WINDOW:
     def __init__(self):
         self.button_frame_list = []
-        self.is_saved = False
+        self.is_saved = True
         self.upper_frame = None
         self.files_opened = {}
         self.file = None
@@ -245,7 +245,7 @@ class WINDOW:
         self.indent_size = 4
         self.indented_count = 0
         self.window = tk.Tk()
-        self.window.configure(bg = "#202136")
+        self.window.configure(bg = "#0a0a0a")
         self.main_frame = None
         self.editor = None
         self.line_numbers = None
@@ -291,9 +291,9 @@ class WINDOW:
         self.logo_png = tk.PhotoImage(file=LOGO_PNG)
         self.logo_label = tk.Label(self.window, image=self.logo_png)
         self.logo_label.grid(row = 0, column = 0, sticky = "w", pady = (30,0), padx = 30)
-        self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#202136", relief = "flat", font = ("Consolas", 60), fg = "white")
+        self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#0a0a0a", relief = "flat", font = ("Consolas", 60), fg = "white")
         self.open_file_button.grid(row = 0, column = 1, pady = (0, 350), padx =(0, 100))
-        self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#202136", command = self.exit_app, relief = "flat", font = ("Consolas", 60), fg = "white")
+        self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#0a0a0a", command = self.exit_app, relief = "flat", font = ("Consolas", 60), fg = "white")
         self.exit_file_button.grid(row = 0, column = 1, pady = (350, 0), padx =(0, 100))
     
     def exit_app(self):
@@ -307,7 +307,7 @@ class WINDOW:
         self.window.destroy()
             
     def create_tab_area(self):
-        self.upper_frame = tk.Frame(self.window, bg = COMMON_BG, height = 25)
+        self.upper_frame = tk.Frame(self.window, bg = COMMON_BG, height = 45)
         self.upper_frame.grid(row = 0, column = 0, columnspan = 3, sticky = "ew")
         
         self.upper_frame.grid_rowconfigure(0, weight = 1)
@@ -315,18 +315,40 @@ class WINDOW:
         
         self.upper_frame.grid_columnconfigure(0, weight = 1)
         
-        self.tab_scrollbar = tk.Scrollbar(self.upper_frame, orient = "horizontal")
-        self.tab_scrollbar.grid(row = 1, column = 0, sticky = "ew")
-        
-        self.tab_canvas = tk.Canvas(self.upper_frame, height = 25, xscrollcommand = self.tab_scrollbar.set, bg = COMMON_BG, relief = "sunken")
-        self.tab_canvas.grid(row = 0, column = 0, sticky = "ew")
-        
+        self.tab_scrollbar = tk.Scrollbar(
+            self.upper_frame,
+            orient="horizontal"
+        )
+
+        self.tab_canvas = tk.Canvas(
+            self.upper_frame,
+            height=45,
+            xscrollcommand=self.tab_scrollbar.set,
+            bg=COMMON_BG,
+            relief="sunken"
+        )
+
+        self.tab_scrollbar.config(command=self.tab_canvas.xview)
+
+        self.tab_canvas.grid(row=0, column=0, sticky="ew")
+        self.tab_scrollbar.grid(row=1, column=0, sticky="ew")
+
         self.canvas_inside_frame = tk.Frame(self.tab_canvas)
 
         self.tab_canvas.create_window(
             (0, 0),
             window=self.canvas_inside_frame,
             anchor="nw"
+        )
+        
+        def update_canvas_scrollregion(event=None):
+            self.tab_canvas.configure(
+                scrollregion=self.tab_canvas.bbox("all")
+            )
+
+        self.canvas_inside_frame.bind(
+            "<Configure>",
+            update_canvas_scrollregion
         )
     
     def hide_file(self, filename):
@@ -417,15 +439,21 @@ class WINDOW:
         button_frame = tk.Frame(
             self.canvas_inside_frame,
             width=80,
-            height=40,
+            height=45,
             relief="flat"
         )
 
-        button_frame.pack(side="left", padx = 1)
+        button_frame.pack(side="left", padx = 1, pady = 2)
         button_frame.grid_columnconfigure(0, weight = 1)
         button_frame.grid_columnconfigure(1, weight = 0)
         
-        tk.Button(button_frame, bg = COMMON_BG, fg = COMMON_FG, text = shorten(filename.split("/")[-1]), command = lambda : self.select_file(filename)).grid(row = 0, column = 0, sticky = "nsew")
+        tk.Button(button_frame,
+                  bg = COMMON_BG,
+                  fg = COMMON_FG,
+                  text = shorten(filename.split("/")[-1]),
+                  font = (COMMON_FONT, 15),
+                  command = lambda : self.select_file(filename)
+        ).grid(row = 0, column = 0, sticky = "nsew")
         
         def button_command(filename):
             self.remove_file(filename)
@@ -467,9 +495,9 @@ class WINDOW:
             self.file = None
             self.logo_label = tk.Label(self.window, image=self.logo_png)
             self.logo_label.grid(row = 0, column = 0, sticky = "w", pady = (30,0), padx = 30)
-            self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#202136", relief = "flat", font = ("Consolas", 60), fg = "white")
+            self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#0a0a0a", relief = "flat", font = ("Consolas", 60), fg = "white")
             self.open_file_button.grid(row = 0, column = 1, pady = (0, 350), padx =(0, 100))
-            self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#202136", command = self.window.quit, relief = "flat", font = ("Consolas", 60), fg = "white")
+            self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#0a0a0a", command = self.window.quit, relief = "flat", font = ("Consolas", 60), fg = "white")
             self.exit_file_button.grid(row = 0, column = 1, pady = (350, 0), padx =(0, 100))
     
     def run_file(self, event=None):
@@ -489,6 +517,7 @@ class WINDOW:
         self.main_frame, self.editor, self.line_numbers, self.main_scrollbar_x, self.main_scrollbar_y = self.files_opened[filename]
         self.main_frame.grid()
         self.file = filename
+        self.window.title(f"CLIDE - {self.file}")
     
     def open_file(self, event=None):
         filename = filedialog.askopenfilename(
