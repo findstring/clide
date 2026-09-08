@@ -3,7 +3,7 @@ import os, sys, subprocess
 import tkinter.font as tkfont
 from tkinter import colorchooser, ttk, simpledialog, filedialog, messagebox
 
-CLIDE_VERSION = "v0.2.1"
+CLIDE_VERSION = "v0.2.2"
 SCRIPT_PATH = os.path.abspath(__file__)
 LOGO_ICO = os.path.join(os.path.dirname(SCRIPT_PATH), "icons", "logo.ico")
 LOGO_PNG = os.path.join(os.path.dirname(SCRIPT_PATH), "icons", "logo.png")
@@ -270,9 +270,9 @@ class WINDOW:
         
         self.main_menubar = tk.Menu(self.window)
         self.main_menubar_file_menu = tk.Menu(self.main_menubar, tearoff=0)
+        self.main_menubar_file_menu.add_command(label="New", command = self.new_file)
         self.main_menubar_file_menu.add_command(label="Open", command = self.open_file)
         self.main_menubar_file_menu.add_command(label="Save", command = self.save_file)
-        self.main_menubar_file_menu.add_command(label="Save as", command = self.saveas_file)
         self.main_menubar_file_menu.add_separator()
         self.main_menubar_file_menu.add_command(label="Exit", command=self.exit_app)
         self.main_menubar.add_cascade(label="File", menu=self.main_menubar_file_menu)
@@ -291,10 +291,12 @@ class WINDOW:
         self.logo_png = tk.PhotoImage(file=LOGO_PNG)
         self.logo_label = tk.Label(self.window, image=self.logo_png)
         self.logo_label.grid(row = 0, column = 0, sticky = "w", pady = (30,0), padx = 30)
-        self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#0a0a0a", relief = "flat", font = ("Consolas", 60), fg = "white")
-        self.open_file_button.grid(row = 0, column = 1, pady = (0, 350), padx =(0, 100))
-        self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#0a0a0a", command = self.exit_app, relief = "flat", font = ("Consolas", 60), fg = "white")
-        self.exit_file_button.grid(row = 0, column = 1, pady = (350, 0), padx =(0, 100))
+        self.new_file_button = tk.Button(self.window, text = "📝 New File", command = self.new_file, bg = "#0a0a0a", relief = "flat", font = ("Consolas", 50), fg = "white")
+        self.new_file_button.grid(row = 0, column = 1, pady = (0, 500), padx =(0, 150))
+        self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#0a0a0a", relief = "flat", font = ("Consolas", 50), fg = "white")
+        self.open_file_button.grid(row = 0, column = 1, pady = (0, 0), padx =(0, 150))
+        self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#0a0a0a", command = self.exit_app, relief = "flat", font = ("Consolas", 50), fg = "white")
+        self.exit_file_button.grid(row = 0, column = 1, pady = (500, 0), padx =(0, 150))
     
     def exit_app(self):
         if self.is_saved == False:
@@ -358,7 +360,11 @@ class WINDOW:
         if self.logo_label:
             self.logo_label.destroy()
             self.logo_label = None
-            
+        
+        if self.new_file_button:
+            self.new_file_button.destroy()
+            self.new_file_button = None
+        
         if self.open_file_button:
             self.open_file_button.destroy()
             self.open_file_button = None
@@ -447,10 +453,12 @@ class WINDOW:
         button_frame.grid_columnconfigure(0, weight = 1)
         button_frame.grid_columnconfigure(1, weight = 0)
         
+        basename = os.path.basename(filename)
+        
         tk.Button(button_frame,
                   bg = COMMON_BG,
                   fg = COMMON_FG,
-                  text = shorten(filename.split("/")[-1]),
+                  text = shorten(basename),
                   font = (COMMON_FONT, 15),
                   command = lambda : self.select_file(filename)
         ).grid(row = 0, column = 0, sticky = "nsew")
@@ -495,10 +503,12 @@ class WINDOW:
             self.file = None
             self.logo_label = tk.Label(self.window, image=self.logo_png)
             self.logo_label.grid(row = 0, column = 0, sticky = "w", pady = (30,0), padx = 30)
-            self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#0a0a0a", relief = "flat", font = ("Consolas", 60), fg = "white")
-            self.open_file_button.grid(row = 0, column = 1, pady = (0, 350), padx =(0, 100))
-            self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#0a0a0a", command = self.window.quit, relief = "flat", font = ("Consolas", 60), fg = "white")
-            self.exit_file_button.grid(row = 0, column = 1, pady = (350, 0), padx =(0, 100))
+            self.new_file_button = tk.Button(self.window, text = "📝 New File", command = self.new_file, bg = "#0a0a0a", relief = "flat", font = ("Consolas", 50), fg = "white")
+            self.new_file_button.grid(row = 0, column = 1, pady = (0, 500), padx =(0, 150))
+            self.open_file_button = tk.Button(self.window, text = "📂 Open File", command = self.open_file, bg = "#0a0a0a", relief = "flat", font = ("Consolas", 50), fg = "white")
+            self.open_file_button.grid(row = 0, column = 1, pady = (0, 0), padx =(0, 150))
+            self.exit_file_button = tk.Button(self.window, text = "🚪  Exit App", bg = "#0a0a0a", command = self.exit_app, relief = "flat", font = ("Consolas", 50), fg = "white")
+            self.exit_file_button.grid(row = 0, column = 1, pady = (500, 0), padx =(0, 150))
     
     def run_file(self, event=None):
         if not self.file:
@@ -519,6 +529,22 @@ class WINDOW:
         self.file = filename
         self.window.title(f"CLIDE - {self.file}")
     
+    def new_file(self, event=None):
+        filename = simpledialog.askstring("Filename", "Enter Filename")
+        if not filename:
+            return
+        
+        directory = filedialog.askdirectory()
+        if not directory:
+            return
+        
+        filepath = os.path.join(directory, filename)
+        
+        open(filepath, "w").close()
+        
+        if os.path.exists(filepath):
+            self.file_open_helper(filepath)
+    
     def open_file(self, event=None):
         filename = filedialog.askopenfilename(
             filetypes=[
@@ -528,6 +554,9 @@ class WINDOW:
         if not filename:
             return
         
+        self.file_open_helper(filename)
+    
+    def file_open_helper(self, filename):
         if filename in self.files_opened and filename != self.file:
             self.select_file(filename)
             return
@@ -544,6 +573,7 @@ class WINDOW:
                 text = f.read().expandtabs(4)
         except Exception as e:
             messagebox.showerror("Unable", f"Unable to Load File {e}")
+            return
         
         if self.file:
             self.hide_file(self.file)
@@ -572,20 +602,6 @@ class WINDOW:
         self.editor.edit_modified(False)
         self.window.title(f"CLIDE - {self.file}")
         self.is_saved = True
-    
-    def saveas_file(self, event=None):
-        path = filedialog.asksaveasfilename(
-            defaultextension=".c",
-            filetypes=[("C source", "*.c"), ("All Files", "*.*")]
-        )
-        if not path:
-            return
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(self.editor.get("1.0", "end-1c"))
-        self.file = path
-        self.editor.edit_modified(False)
-        self.window.title(f"CLIDE - {self.file}")
-        self.update_clide()
     
     def style_configurator(self, event = None):
         win = tk.Toplevel(self.window)

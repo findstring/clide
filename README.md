@@ -10,7 +10,8 @@ Built mostly as a personal project / learning exercise, not (yet) a serious riva
 
 ## Changelog
 
-- Fixed Scrollbar of the tabs and UI.
+- Added **New File** option.
+- Removed **Save As** option.
 
 ## Features
 
@@ -19,7 +20,7 @@ Built mostly as a personal project / learning exercise, not (yet) a serious riva
 - 🔍 **Zoom in/out** with `Ctrl + Mouse Wheel`
 - ⏎ **Auto-indent** — adds/removes indentation automatically after `{`, `}`, and `:`
 - ▶️ **Run with F5** — compiles your file with `gcc` and runs it in a new console window
-- 💾 **Open / Save / Save As** from the File menu or `Ctrl+O` / `Ctrl+S`
+- 💾 **Open / Save / New** from the File menu or `Ctrl+O` / `Ctrl+S`
 - 📋 **Paste-aware highlighting** — pasted multi-line code gets highlighted properly, not just the current line
 - 🎨 **Style Configurator** — change background, foreground colour and also fonts
 - 🖱️ **Undo/redo support** (unlimited undo history)
@@ -42,7 +43,7 @@ pip install clide-editor
 Or install this specific version:
 
 ```bash
-pip install clide-editor==0.2.1
+pip install clide-editor==0.2.2
 ```
 
 Run CLIDE:
@@ -55,7 +56,7 @@ Open a `.c` file with `Ctrl+O`, write some code, hit `F5` to compile and run it.
 
 ## Version
 
-**v0.2.1** — Things work, but expect rough edges.
+**v0.2.2** — Things work, but expect rough edges.
 
 ## Limitations
 
